@@ -68,6 +68,46 @@ button:disabled { background: #a5b4e8; cursor: not-allowed; }
   border-radius: 999px;
 }
 
+.tags { display: flex; gap: 4px; }
+
+/* 레벨 선택 */
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+.levels legend { font-weight: 600; margin-bottom: 8px; }
+.level-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+  user-select: none;
+}
+.level-chip input { margin: 0; }
+.level-chip.on { border-color: #3b5bdb; background: #edf2ff; color: #3b5bdb; font-weight: 600; }
+
+/* 레벨 배지: 쉬울수록 초록, 어려울수록 빨강 */
+.badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: white;
+}
+.badge-N5 { background: #2f9e44; }
+.badge-N4 { background: #66a80f; }
+.badge-N3 { background: #f08c00; }
+.badge-N2 { background: #e8590c; }
+.badge-N1 { background: #c92a2a; }
+
 .pattern { font-size: 20px; }
 .meaning { font-weight: 600; margin: 8px 0 4px; }
 .explanation { font-size: 14px; color: #555; }

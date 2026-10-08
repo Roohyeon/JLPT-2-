@@ -1,13 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { n2ExtractorTool } from "../n2Tool.js";
-import { ExtractError, SYSTEM_PROMPT } from "./common.js";
+import { jlptExtractorTool } from "../jlptTool.js";
+import { ExtractError, SYSTEM_PROMPT, buildUserPrompt } from "./common.js";
 
 // ANTHROPIC_API_KEY 환경변수(.env)를 자동으로 읽는다.
 const client = new Anthropic();
 
 export const providerName = "Claude (claude-haiku-5-5)";
 
-export async function extract(article) {
+export async function extract(article, levels) {
   let response;
   try {
     response = await client.messages.create({
@@ -15,11 +15,11 @@ export async function extract(article) {
       model: "claude-haiku-5-5",
       max_tokens: 16000,
       output_config: { effort: "medium" },
-      system: `${SYSTEM_PROMPT}\n반드시 extract_jlpt_n2_items 도구를 한 번 호출해서 기록해라.`,
-      tools: [n2ExtractorTool],
+      system: `${SYSTEM_PROMPT}\n반드시 ${jlptExtractorTool.name} 도구를 한 번 호출해서 기록해라.`,
+      tools: [jlptExtractorTool],
       // 참고: 최신 Claude 모델은 tool_choice로 도구 호출을 "강제"할 수 없다(400 에러).
       // 그래서 기본값(auto) + 시스템 프롬프트로 호출을 유도한다.
-      messages: [{ role: "user", content: `다음 기사를 분석해줘.\n\n${article}` }],
+      messages: [{ role: "user", content: buildUserPrompt(article, levels) }],
     });
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError) {
@@ -43,7 +43,7 @@ export async function extract(article) {
 
   // 응답 content 배열에서 우리 도구를 호출한 블록을 찾는다.
   const toolUse = response.content.find(
-    (block) => block.type === "tool_use" && block.name === n2ExtractorTool.name
+    (block) => block.type === "tool_use" && block.name === jlptExtractorTool.name
   );
   if (!toolUse) {
     throw new ExtractError(502, "모델이 결과를 구조화된 형태로 돌려주지 않았습니다. 다시 시도해주세요.");

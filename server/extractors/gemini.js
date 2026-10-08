@@ -1,6 +1,6 @@
 import { GoogleGenAI, ApiError } from "@google/genai";
-import { n2ExtractorTool } from "../n2Tool.js";
-import { ExtractError, SYSTEM_PROMPT } from "./common.js";
+import { jlptExtractorTool } from "../jlptTool.js";
+import { ExtractError, SYSTEM_PROMPT, buildUserPrompt } from "./common.js";
 
 // 빠른 Flash 모델. .env 의 GEMINI_MODEL 로 바꿀 수 있다.
 // 쓸 수 있는 모델 목록: node scripts/list-gemini-models.js
@@ -15,22 +15,23 @@ const ai = new GoogleGenAI({
 
 export const providerName = `Gemini (${MODEL})`;
 
-export async function extract(article) {
+export async function extract(article, levels) {
   let response;
   try {
     response = await ai.models.generateContent({
       model: MODEL,
-      contents: `다음 기사를 분석해줘.\n\n${article}`,
+      contents: buildUserPrompt(article, levels),
       config: {
-        systemInstruction: `${SYSTEM_PROMPT}\n\n${n2ExtractorTool.description}`,
+        systemInstruction: SYSTEM_PROMPT,
         // Claude의 tool 스키마를 그대로 재사용: 응답이 이 JSON 형식을 따르도록 강제한다.
         responseMimeType: "application/json",
-        responseJsonSchema: n2ExtractorTool.input_schema,
+        responseJsonSchema: jlptExtractorTool.input_schema,
       },
     });
   } catch (error) {
     if (error instanceof ApiError) {
-      if (error.status === 400 || error.status === 401 || error.status === 403) {
+      const badKey = error.status === 401 || error.status === 403 || /API key/i.test(error.message);
+      if (badKey) {
         throw new ExtractError(500, "Gemini API 키가 올바르지 않습니다. .env 의 GEMINI_API_KEY 를 확인하세요.");
       }
       if (error.status === 429) {

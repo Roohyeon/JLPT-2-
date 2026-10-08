@@ -13,7 +13,7 @@ const article =
 console.log(`${providerName} 로 추출 중...`);
 const started = Date.now();
 try {
-  const result = await extract(article);
+  const result = await extract(article, ["N3", "N2", "N1"]);
   console.log(JSON.stringify(result, null, 2));
 } catch (error) {
   console.error("실패:", error.status ?? "", error.message);
