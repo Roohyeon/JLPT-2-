@@ -70,6 +70,41 @@ button:disabled { background: #a5b4e8; cursor: not-allowed; }
 
 .tags { display: flex; gap: 4px; }
 
+/* API 키 입력 */
+.key-box {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.key-box.saved {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+}
+.key-box .hint { font-size: 14px; color: #555; margin: 6px 0 10px; }
+.key-row { display: flex; gap: 8px; }
+.key-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+.key-row button { margin-top: 0; }
+.remember { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 14px; color: #555; }
+button.link {
+  margin: 0;
+  padding: 0;
+  background: none;
+  color: #c92a2a;
+  font-size: 14px;
+  text-decoration: underline;
+}
+
 /* 레벨 선택 */
 .levels {
   display: flex;
