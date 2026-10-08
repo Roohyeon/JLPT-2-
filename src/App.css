@@ -1,0 +1,81 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Noto Sans KR", "Noto Sans JP", system-ui, sans-serif;
+  background: #f6f7f9;
+  color: #222;
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  line-height: 1.6;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  resize: vertical;
+}
+
+button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background: #3b5bdb;
+  color: white;
+  cursor: pointer;
+}
+button:disabled { background: #a5b4e8; cursor: not-allowed; }
+
+.error { color: #c92a2a; }
+.empty { color: #888; }
+
+.cards {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 22px;
+}
+
+.tag {
+  font-size: 12px;
+  background: #edf2ff;
+  color: #3b5bdb;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.pattern { font-size: 20px; }
+.meaning { font-weight: 600; margin: 8px 0 4px; }
+.explanation { font-size: 14px; color: #555; }
+
+blockquote {
+  margin: 8px 0 0;
+  padding-left: 10px;
+  border-left: 3px solid #dee2e6;
+  color: #555;
+  font-size: 14px;
+}
