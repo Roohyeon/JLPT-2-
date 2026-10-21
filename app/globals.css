@@ -1,56 +1,467 @@
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
+
+/* 신문지 색: 바랜 종이 위에 검은 잉크 */
+:root {
+  --paper: #ebe7df;
+  --paper-light: #f6f3ec;
+  --ink: #2a2826;
+  --ink-soft: #555049;
+  --ink-faint: #8a847a;
+  --rule: #3a3734;
+  --dark-box: #3b3936;
+  --highlight: #e2d9c8;
+  --serif: "EB Garamond", "Noto Serif KR", "Noto Serif JP", Georgia, serif;
+  --serif-jp: "Noto Serif JP", "Noto Serif KR", serif;
+  --serif-ko: "Noto Serif KR", "EB Garamond", serif;
+}
 
 body {
   margin: 0;
-  font-family: "Noto Sans KR", "Noto Sans JP", system-ui, sans-serif;
-  background: #f6f7f9;
-  color: #222;
+  font-family: var(--serif);
+  color: var(--ink);
+  background-color: var(--paper);
+  /* 구겨진 종이 질감을 은은한 그라디언트로 흉내 낸다 */
+  background-image:
+    radial-gradient(
+      ellipse at 20% 10%,
+      rgba(255, 255, 255, 0.55),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 85% 40%,
+      rgba(255, 255, 255, 0.4),
+      transparent 50%
+    ),
+    radial-gradient(ellipse at 40% 90%, rgba(0, 0, 0, 0.05), transparent 60%),
+    linear-gradient(
+      115deg,
+      transparent 48%,
+      rgba(0, 0, 0, 0.025) 50%,
+      transparent 52%
+    ),
+    linear-gradient(
+      35deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.3) 31%,
+      transparent 33%
+    );
+  background-attachment: fixed;
 }
 
-.container {
-  max-width: 860px;
+/* 머리 → 레벨 → 뉴스 → 기사 → 붙여넣기, 한 단으로 쌓는다 */
+.paper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding: 28px 16px 48px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* ── 머리: 신문 제호 ─────────────────── */
+.mast-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid var(--rule);
+}
+.mast-side {
+  font-family: "Playfair Display", var(--serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 15px;
+}
+.mast-side.right {
+  text-align: right;
+}
+.mast-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.edition {
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  font-size: 14px;
+  padding: 0 16px;
+  border-top: 1px solid var(--rule);
+}
+.series {
+  font-family: "UnifrakturMaguntia", var(--serif);
+  font-size: 34px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.series i {
+  font-style: normal;
+  font-family: var(--serif);
+  font-size: 24px;
+  vertical-align: middle;
+  padding: 0 10px;
+}
+/* 위 굵은 선 + 가는 선 = 두 줄, 제목 아래는 한 줄 */
+.mast-title {
+  margin: 3px 0 0;
+  padding: 20px 0 30px;
+  font-family: "Playfair Display", var(--serif);
+  font-weight: 900;
+  font-size: clamp(44px, 11vw, 108px);
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-align: center;
+  border-top: 1px solid var(--rule);
+  border-bottom: 3px solid var(--rule);
+}
+
+/* ── 상자: 테두리 + 진한 제목 띠 ─────── */
+.box {
+  border: 1.5px solid var(--rule);
+  background: rgba(246, 243, 236, 0.35);
+  padding: 14px 16px;
+}
+.box-title {
+  margin: -14px -16px 16px;
+  padding: 9px 12px;
+  background: var(--dark-box);
+  color: var(--paper-light);
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+/* ── 레벨 ───────────────────────────── */
+.levels-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+/* 레벨 상자는 제목 띠와 여백을 얇게 (버튼 크기는 그대로) */
+.levels-box {
+  padding: 8px 12px;
+}
+.levels-box .box-title {
+  margin: -8px -12px 8px;
+  padding: 4px 12px;
+  font-size: 16px;
+}
+.levels-row .levels-note {
+  font-size: 13px;
+}
+/* 다섯 레벨 버튼이 상자 너비를 똑같이 나눠 쓴다 */
+.levels {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.level-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 10px;
+  border: 1.5px solid var(--rule);
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.level-chip:hover {
+  background: var(--highlight);
+}
+.level-chip.on:hover {
+  background: var(--dark-box);
+}
+/* 체크박스는 보이지 않게 숨기고, 눌린 상태(진한 배경)로만 선택을 보여 준다.
+   키보드·화면낭독기로는 그대로 쓸 수 있게 요소는 남겨 둔다. */
+.level-chip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+.level-chip:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.level-chip.on {
+  background: var(--dark-box);
+  color: var(--paper-light);
+}
+.levels-note {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+/* ── NHK 뉴스 ───────────────────────── */
+.news-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.news-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.news-list li + li {
+  border-top: 1px solid var(--ink-faint);
+}
+button.tab {
+  margin: 0;
+  padding: 6px 36px;
+  font-size: 14px;
+  font-weight: 400;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+}
+button.tab.on {
+  background: var(--dark-box);
+  color: var(--paper-light);
+}
+button.news-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  margin: 0;
+  padding: 9px 6px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  text-align: left;
+  font-family: var(--serif-jp);
+  font-size: 15px;
+}
+button.news-item strong {
+  font-weight: 600;
+  line-height: 1.5;
+}
+button.news-item span {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+button.news-item:hover {
+  background: var(--highlight);
+}
+button.news-item.on {
+  background: var(--highlight);
+  box-shadow: inset 3px 0 0 var(--rule);
+}
+
+/* ── 기사: 제목 상자 + 본문 ──────────── */
+.article-box {
+  padding: 0;
+}
+.headline {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-bottom: 1.5px solid var(--rule);
+}
+.headline h2 {
+  margin: 0;
+  flex: 1;
+  font-family: var(--serif-jp);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.45;
+  text-align: center;
+}
+.drop {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  background: var(--dark-box);
+  color: var(--paper-light);
+  font-family: var(--serif-jp);
+  font-size: 28px;
+}
+.article-body {
+  padding: 14px 16px;
+  min-height: 160px;
+}
+.reader-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.reader-head .sub {
+  margin: 0;
+}
+
+/* 기사 문단: 일본어 → 바로 밑에 한국어 */
+.para {
+  margin-bottom: 18px;
+}
+.reader-text {
+  margin: 0;
+  font-family: var(--serif-jp);
+  font-size: 18px;
+  line-height: 2.1;
+  text-align: justify;
+}
+.ko {
+  margin: 2px 0 0;
+  padding: 6px 12px;
+  background: rgba(226, 217, 200, 0.55);
+  border-left: 3px solid var(--rule);
+  font-family: var(--serif-ko);
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+}
+/* 일본어 문단 옆 작은 스피커: 누르면 읽어 주고, 읽는 중에 누르면 멈춘다 */
+button.speak {
+  float: right;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: 6px 0 0 8px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+}
+button.speak:hover {
+  border-color: var(--rule);
+  color: var(--ink);
+}
+button.speak.on {
+  background: var(--dark-box);
+  color: var(--paper-light);
+}
+.ko.pending {
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
+/* ── 버튼·입력 ───────────────────────── */
+button {
+  margin-top: 12px;
+  padding: 9px 20px;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  border: 1.5px solid var(--rule);
+  border-radius: 0;
+  background: var(--dark-box);
+  color: var(--paper-light);
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+button.toggle {
+  flex: none;
+  margin: 0;
+  padding: 3px 12px;
+  font-family: var(--serif-ko);
+  font-size: 14px;
+  background: transparent;
+  color: var(--ink);
+}
+button.toggle:hover {
+  background: var(--highlight);
 }
 
 textarea {
   width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  line-height: 1.6;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--serif-jp);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--paper-light);
+  border: 1px solid var(--rule);
+  border-radius: 0;
   resize: vertical;
 }
 
-button {
-  margin-top: 12px;
-  padding: 10px 20px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background: #3b5bdb;
+.error {
+  color: #9b2c1f;
+}
+.empty {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+.sub {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-faint);
+  font-style: italic;
+  margin: 8px 0 0;
+}
+p.hint {
+  font-size: 15px;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 4px 0 0;
+}
+a {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ── 레벨 배지: 쉬울수록 초록, 어려울수록 빨강 (인쇄 느낌으로 톤을 낮춤) ── */
+.badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 7px;
   color: white;
-  cursor: pointer;
 }
-button:disabled { background: #a5b4e8; cursor: not-allowed; }
-
-.error { color: #c92a2a; }
-.empty { color: #888; }
-
-.cards {
-  list-style: none;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
+.badge-N5 {
+  background: #4f7a4a;
 }
-
-.card {
-  background: white;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.badge-N4 {
+  background: #7a8a3a;
+}
+.badge-N3 {
+  background: #b9822b;
+}
+.badge-N2 {
+  background: #b15a2c;
+}
+.badge-N1 {
+  background: #9b2c1f;
 }
 
 .card-head {
@@ -59,128 +470,68 @@ button:disabled { background: #a5b4e8; cursor: not-allowed; }
   justify-content: space-between;
   font-size: 22px;
 }
-
 .tag {
   font-size: 12px;
-  background: #edf2ff;
-  color: #3b5bdb;
-  padding: 2px 8px;
-  border-radius: 999px;
+  border: 1px solid var(--ink-faint);
+  color: var(--ink-soft);
+  padding: 0 6px;
 }
-
-.tags { display: flex; gap: 4px; }
-
-/* NHK 뉴스 */
-.news-box {
-  background: white;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-.news-box h2 { margin: 0 0 10px; font-size: 18px; }
-.news-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.news-tabs .level-chip { margin: 0; font-size: 14px; color: #222; }
-.news-tabs .level-chip.on { color: #3b5bdb; }
-.news-list { list-style: none; padding: 0; margin: 0; max-height: 320px; overflow-y: auto; }
-.news-list li + li { border-top: 1px solid #eee; }
-button.news-item {
+.tags {
   display: flex;
-  flex-direction: column;
   gap: 4px;
-  width: 100%;
-  margin: 0;
-  padding: 10px 4px;
-  background: none;
-  color: #222;
-  text-align: left;
-  font-size: 15px;
-  border-radius: 6px;
 }
-button.news-item:hover { background: #f1f3f5; }
-button.news-item span { font-size: 13px; color: #666; }
-p.hint { font-size: 14px; color: #555; }
-
-/* 레벨 선택 */
-.levels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  border: none;
-  padding: 0;
-  margin: 0 0 12px;
+.pattern {
+  font-size: 20px;
 }
-.levels legend { font-weight: 600; margin-bottom: 8px; }
-.level-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 14px;
-  border: 1px solid #ccc;
-  border-radius: 999px;
-  background: white;
-  cursor: pointer;
-  user-select: none;
+.meaning {
+  font-weight: 600;
+  margin: 8px 0 4px;
 }
-.level-chip input { margin: 0; }
-.levels .hint { flex-basis: 100%; margin: 0; font-size: 14px; color: #555; }
-.level-chip.on { border-color: #3b5bdb; background: #edf2ff; color: #3b5bdb; font-weight: 600; }
-
-/* 레벨 배지: 쉬울수록 초록, 어려울수록 빨강 */
-.badge {
-  font-size: 12px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-  color: white;
-}
-.badge-N5 { background: #2f9e44; }
-.badge-N4 { background: #66a80f; }
-.badge-N3 { background: #f08c00; }
-.badge-N2 { background: #e8590c; }
-.badge-N1 { background: #c92a2a; }
-
-.pattern { font-size: 20px; }
-.meaning { font-weight: 600; margin: 8px 0 4px; }
-.explanation { font-size: 14px; color: #555; }
-
-blockquote {
-  margin: 8px 0 0;
-  padding-left: 10px;
-  border-left: 3px solid #dee2e6;
-  color: #555;
+.explanation {
   font-size: 14px;
+  color: var(--ink-soft);
 }
 
-.sub { font-size: 13px; font-weight: 400; color: #888; margin: 0 0 4px; }
-
-/* 기사 번역 */
-.translation { margin-top: 20px; }
-.translation-head { display: flex; justify-content: space-between; align-items: center; }
-.translation-head h2 { margin: 0; }
-.translation p { line-height: 1.7; }
-button.toggle { margin: 0; padding: 4px 12px; font-size: 14px; }
-
-/* 기사 속 단어: 누르면 뜻이 열린다 */
-.reader-text { font-size: 18px; line-height: 2.2; }
-.word-wrap { position: relative; }
-button.word, button.grammar {
+/* ── 기사 속 단어: 누르면 뜻이 열린다 ── */
+.word-wrap {
+  position: relative;
+}
+button.word,
+button.grammar {
   margin: 0;
   padding: 0 1px;
   font: inherit;
   color: inherit;
   background: none;
-  border-radius: 3px;
+  border: none;
   border-bottom: 2px solid currentColor;
 }
 /* 문법은 밑줄 대신 연한 배경으로 단어와 구분한다 */
-button.grammar { border-bottom-style: dashed; background: #fff4e6; }
-button.word-N5 { border-bottom-color: #2f9e44; }
-button.word-N4 { border-bottom-color: #66a80f; }
-button.word-N3 { border-bottom-color: #f08c00; }
-button.word-N2 { border-bottom-color: #e8590c; }
-button.word-N1 { border-bottom-color: #c92a2a; }
-button.word:hover, button.word.on, button.grammar:hover, button.grammar.on { background: #edf2ff; }
+button.grammar {
+  border-bottom-style: dashed;
+  background: #ecdcbf;
+}
+button.word-N5 {
+  border-bottom-color: #4f7a4a;
+}
+button.word-N4 {
+  border-bottom-color: #7a8a3a;
+}
+button.word-N3 {
+  border-bottom-color: #b9822b;
+}
+button.word-N2 {
+  border-bottom-color: #b15a2c;
+}
+button.word-N1 {
+  border-bottom-color: #9b2c1f;
+}
+button.word:hover,
+button.word.on,
+button.grammar:hover,
+button.grammar.on {
+  background: #d8ccb6;
+}
 .popover {
   position: absolute;
   top: 100%;
@@ -193,14 +544,84 @@ button.word:hover, button.word.on, button.grammar:hover, button.grammar.on { bac
   max-width: min(280px, 80vw);
   margin-top: 4px;
   padding: 10px 12px;
-  background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  background: var(--paper-light);
+  border: 1.5px solid var(--rule);
+  box-shadow: 4px 4px 0 rgba(42, 40, 38, 0.18);
   line-height: 1.5;
   font-size: 15px;
+  text-align: left;
 }
-.popover .card-head { gap: 12px; }
-.popover .meaning { margin: 4px 0 0; }
-.popover .explanation { font-size: 13px; }
-.popover .pattern { font-size: 17px; }
+.popover .card-head {
+  gap: 12px;
+}
+.popover .meaning {
+  margin: 4px 0 0;
+}
+.popover .explanation {
+  font-size: 13px;
+}
+.popover .pattern {
+  font-size: 17px;
+}
+
+/* ── 좁은 화면 ───────────────────────── */
+@media (max-width: 720px) {
+  /* 모바일 뉴스 목록은 제목만 보여 준다 */
+  button.news-item span {
+    display: none;
+  }
+  .levels {
+    gap: 4px;
+  }
+  .level-chip {
+    gap: 4px;
+    padding: 10px 4px;
+    font-size: 16px;
+  }
+  .mast-top {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .mast-side,
+  .mast-side.right {
+    text-align: center;
+  }
+  .mast-side:first-child {
+    display: none;
+  }
+  .series {
+    font-size: 28px;
+  }
+  .headline h2 {
+    font-size: 18px;
+  }
+  .reader-text {
+    font-size: 17px;
+  }
+}
+
+/* ── 직접 붙여넣기: 제목 띠를 누르면 열고 닫힌다 ── */
+.paste.closed {
+  padding-bottom: 0;
+}
+.paste.closed .box-title {
+  margin-bottom: 0;
+}
+.box-title button.box-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}
+.box-toggle .caret {
+  font-size: 12px;
+  font-style: normal;
+}
