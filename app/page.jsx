@@ -6,7 +6,7 @@ import { NEWS_CATEGORIES } from "../lib/news.js";
 
 const MODES = [
   { value: "ai", label: "AI 분석", hint: "단어 + 문법, 한국어 뜻 (Gemini)" },
-  { value: "dictionary", label: "사전 모드", hint: "AI 없이 단어만, 영어 뜻 · 레벨은 한자 기준 추정" },
+  { value: "dictionary", label: "사전 모드", hint: "AI 없이 단어 + 문법 · 단어 뜻은 영어 · 단어 레벨은 한자 기준 추정, 문법은 규칙 기반" },
 ];
 
 // 쉬운 레벨(N5)이 먼저 오도록 정렬
@@ -129,11 +129,7 @@ ${item.summary.replace(/…$/, "")}`);
       {result && (
         <>
           <VocabularyList items={[...result.vocabulary].sort(byLevel)} />
-          {result.mode === "ai" ? (
-            <GrammarList items={[...result.grammar].sort(byLevel)} />
-          ) : (
-            <p className="empty">사전 모드는 문법을 찾지 않습니다. 문법까지 보려면 AI 분석을 이용하세요.</p>
-          )}
+          <GrammarList items={[...result.grammar].sort(byLevel)} />
         </>
       )}
     </main>

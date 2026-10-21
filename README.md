@@ -16,12 +16,15 @@
 | | AI 분석 (Gemini) | 사전 모드 (AI 없음) |
 |---|---|---|
 | 단어 | ✅ 한국어 뜻 | ✅ 영어 뜻 |
-| 문법 | ✅ | ❌ |
+| 문법 | ✅ | ✅ 규칙 기반 (약 150개 패턴, 한국어 설명) |
 | 레벨 | AI 추정 | 단어 속 가장 어려운 한자의 레벨 (추정) |
 | 비용·제한 | Gemini 사용량 소모, IP 당 한 시간 20회 | 제한 없음 |
 
 - 사전 모드는 [AnchorI/jlpt-kanji-dictionary](https://github.com/AnchorI/jlpt-kanji-dictionary) (MIT) 데이터와 형태소 분석기 [kuromoji](https://github.com/takuyaa/kuromoji.js) 를 씁니다.
   원본 단어 사전에는 JLPT 레벨이 없고 한자에만 레벨이 있어서, 단어 레벨은 한자 기준 추정치입니다.
+- 사전 모드의 문법은 `lib/grammarPatterns.js` 에 정리한 패턴(정규식·형태소 규칙)으로 찾습니다.
+  공개된 문법 데이터가 없어 직접 정리한 목록이고, 규칙에 없는 문법은 찾지 못하며 가끔 잘못 잡을 수 있습니다.
+  패턴은 목록에 한 줄씩 추가할 수 있습니다.
 - 2010년 이후 JLPT 공식 어휘 목록은 공개되지 않아, 어느 방식이든 레벨은 추정치입니다.
 
 ## API 키 보호
@@ -48,7 +51,8 @@ app/
 lib/
   gemini.js               Gemini 호출 (모델 이름은 여기서 변경)
   jlptSchema.js           결과 JSON 형식, 추출 지시문
-  dictionary.js           사전 모드 분석
+  dictionary.js           사전 모드 분석 (단어 + 문법)
+  grammarPatterns.js      사전 모드 문법 규칙 목록
   news.js                 NHK RSS 가져오기 (10분 캐시)
 data/
   jlpt-dictionary.json    사전 모드 데이터 (scripts/build-dictionary.mjs 로 생성)
