@@ -70,40 +70,36 @@ button:disabled { background: #a5b4e8; cursor: not-allowed; }
 
 .tags { display: flex; gap: 4px; }
 
-/* API 키 입력 */
-.key-box {
+/* NHK 뉴스 */
+.news-box {
   background: white;
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
-.key-box.saved {
+.news-box h2 { margin: 0 0 10px; font-size: 18px; }
+.news-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.news-tabs .level-chip { margin: 0; font-size: 14px; color: #222; }
+.news-tabs .level-chip.on { color: #3b5bdb; }
+.news-list { list-style: none; padding: 0; margin: 0; max-height: 320px; overflow-y: auto; }
+.news-list li + li { border-top: 1px solid #eee; }
+button.news-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 16px;
-}
-.key-box .hint { font-size: 14px; color: #555; margin: 6px 0 10px; }
-.key-row { display: flex; gap: 8px; }
-.key-row input {
-  flex: 1;
-  min-width: 0;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-}
-.key-row button { margin-top: 0; }
-.remember { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 14px; color: #555; }
-button.link {
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
   margin: 0;
-  padding: 0;
+  padding: 10px 4px;
   background: none;
-  color: #c92a2a;
-  font-size: 14px;
-  text-decoration: underline;
+  color: #222;
+  text-align: left;
+  font-size: 15px;
+  border-radius: 6px;
 }
+button.news-item:hover { background: #f1f3f5; }
+button.news-item span { font-size: 13px; color: #666; }
+p.hint { font-size: 14px; color: #555; }
 
 /* 레벨 선택 */
 .levels {
@@ -127,6 +123,7 @@ button.link {
   user-select: none;
 }
 .level-chip input { margin: 0; }
+.levels .hint { flex-basis: 100%; margin: 0; font-size: 14px; color: #555; }
 .level-chip.on { border-color: #3b5bdb; background: #edf2ff; color: #3b5bdb; font-weight: 600; }
 
 /* 레벨 배지: 쉬울수록 초록, 어려울수록 빨강 */

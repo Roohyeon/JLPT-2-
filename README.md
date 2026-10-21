@@ -1,50 +1,82 @@
 # JLPT 단어·문법 추출기
 
-일본어 기사를 붙여넣고 원하는 **JLPT 레벨(N5~N1)** 을 고르면, AI(Google Gemini)가 그 레벨의 단어와 문법을 골라 카드로 보여주는 웹앱입니다.
+일본어 기사를 붙여넣고 원하는 **JLPT 레벨(N5~N1)** 을 고르면, 그 레벨의 단어와 문법을 골라 카드로 보여주는 웹앱입니다.
 
-👉 **바로 사용하기:** https://roohyeon.github.io/JLPT-2-/
+## 기사 넣기
 
-- 단어: 표기 · 후리가나 · 레벨 · 품사 · 한국어 뜻 · 기사 속 원문 문장
-- 문법: 패턴 · 레벨 · 한국어 의미 · 접속/뉘앙스 설명 · 기사 속 원문 문장
-- 레벨은 AI의 추정치입니다. (2010년 이후 JLPT 공식 어휘 목록은 공개되지 않음)
+- **오늘의 NHK 뉴스**: NHK 공식 RSS 에서 분야별 최신 뉴스를 불러옵니다. 누르면 제목 + 요약이 입력칸에 들어갑니다.
+  RSS 에는 요약(100자 안팎)만 있고, 기사 전문은 NHK 로그인 토큰이 있어야 받을 수 있어서 자동으로 가져오지 않습니다.
+  전문으로 분석하려면 원문 링크에서 본문을 복사해 붙여넣으세요.
+- **직접 붙여넣기**: 어떤 일본어 기사든 입력칸에 붙여넣으면 됩니다.
 
-## API 키
+> 예전에 쓰이던 `www3.nhk.or.jp/news/easy/news-list.json` 은 지금 `news.web.nhk` 로 이동되며 JWT 토큰을 요구(401)해서 쓸 수 없습니다.
 
-이 앱은 서버 없이 브라우저에서 바로 Gemini를 호출합니다. 그래서 **사용자가 자신의 Gemini API 키를 화면에 입력**해야 합니다.
+## 분석 방식 두 가지
 
-- 키 발급(무료): https://aistudio.google.com/apikey
-- 입력한 키는 내 브라우저(localStorage)에만 저장되고, Google 외에는 어디에도 전송되지 않습니다.
-- 공용 PC에서는 "이 브라우저에 기억하기"를 해제하거나, 사용 후 "키 삭제"를 누르세요.
+| | AI 분석 (Gemini) | 사전 모드 (AI 없음) |
+|---|---|---|
+| 단어 | ✅ 한국어 뜻 | ✅ 영어 뜻 |
+| 문법 | ✅ | ❌ |
+| 레벨 | AI 추정 | 단어 속 가장 어려운 한자의 레벨 (추정) |
+| 비용·제한 | Gemini 사용량 소모, IP 당 한 시간 20회 | 제한 없음 |
+
+- 사전 모드는 [AnchorI/jlpt-kanji-dictionary](https://github.com/AnchorI/jlpt-kanji-dictionary) (MIT) 데이터와 형태소 분석기 [kuromoji](https://github.com/takuyaa/kuromoji.js) 를 씁니다.
+  원본 단어 사전에는 JLPT 레벨이 없고 한자에만 레벨이 있어서, 단어 레벨은 한자 기준 추정치입니다.
+- 2010년 이후 JLPT 공식 어휘 목록은 공개되지 않아, 어느 방식이든 레벨은 추정치입니다.
+
+## API 키 보호
+
+Gemini 키는 **서버 환경변수(`GEMINI_API_KEY`)** 에만 있고 브라우저로 전달되지 않습니다.
+브라우저는 `/api/extract` 로 기사만 보내고, 서버(Next.js Route Handler)가 Gemini 를 호출합니다.
+누구나 호출해 키 사용량을 소모하지 않도록 기사 길이(8000자)와 IP 당 호출 횟수를 제한합니다.
 
 ## 기술 스택
 
-- React 18 + Vite
-- `@google/genai` (Gemini SDK, 브라우저에서 직접 호출)
-- GitHub Actions → GitHub Pages 자동 배포
+- Next.js (App Router) + React
+- `@google/genai` (서버에서만 호출)
+- `kuromoji` (사전 모드 형태소 분석)
 
 ## 구조
 
 ```
-src/
-  JLPT.jsx            앱 시작점
-  App.jsx             API 키 입력, 레벨 선택, 결과 카드
-  lib/
-    gemini.js         Gemini 호출 (모델 이름은 여기서 변경)
-    jlptSchema.js     결과 JSON 형식, 추출 지시문
-.github/workflows/
-  deploy.yml          main 에 push 하면 자동 빌드 & Pages 배포
+app/
+  layout.jsx              공통 레이아웃
+  page.jsx                화면 (분석 방식·레벨 선택, 결과 카드)
+  globals.css
+  api/extract/route.js    서버 API: 입력 검사, 호출 제한, 모드별 분석
+  api/news/route.js       서버 API: NHK RSS 뉴스 목록
+lib/
+  gemini.js               Gemini 호출 (모델 이름은 여기서 변경)
+  jlptSchema.js           결과 JSON 형식, 추출 지시문
+  dictionary.js           사전 모드 분석
+  news.js                 NHK RSS 가져오기 (10분 캐시)
+data/
+  jlpt-dictionary.json    사전 모드 데이터 (scripts/build-dictionary.mjs 로 생성)
+scripts/
+  build-dictionary.mjs    원본 사전(60MB)을 필요한 부분만 남겨 줄이는 스크립트
 ```
 
 ## 로컬에서 실행
 
 ```bash
 npm install
+cp .env.example .env.local   # 그리고 GEMINI_API_KEY= 뒤에 키 입력
 npm run dev
 ```
 
-http://localhost:5173 접속 후 화면에서 API 키를 입력하세요.
+http://localhost:3000 에 접속하세요. 키 발급(무료): https://aistudio.google.com/apikey
 
 ## 배포
 
-`main` 브랜치에 push 하면 GitHub Actions 가 자동으로 빌드해서 Pages 에 올립니다.
-처음 한 번만 저장소 **Settings → Pages → Source** 를 **GitHub Actions** 로 바꿔주세요.
+서버 코드(API)가 있어서 **GitHub Pages 로는 배포할 수 없습니다.** Vercel 을 추천합니다.
+
+1. https://vercel.com 에서 이 GitHub 저장소를 Import
+2. Settings → Environment Variables 에 `GEMINI_API_KEY` 추가
+3. 이후 `main` 에 push 하면 자동 배포
+
+## 사전 데이터 다시 만들기
+
+```bash
+git clone --depth 1 https://github.com/AnchorI/jlpt-kanji-dictionary.git ../jlpt-kanji-dictionary
+node scripts/build-dictionary.mjs ../jlpt-kanji-dictionary
+```
