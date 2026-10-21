@@ -6,6 +6,8 @@ const nextConfig = {
   outputFileTracingIncludes: {
     "/api/extract": ["./node_modules/kuromoji/dict/**", "./data/**"],
   },
+  // next dev 가 AGENTS.md 를 자동으로 만들지 않게 한다.
+  agentRules: false,
 };
 
 export default nextConfig;
