@@ -13,21 +13,24 @@
 
 ## 분석 방식 두 가지
 
-| | AI 분석 (Gemini) | 사전 모드 (AI 없음) |
+**기본은 사전 모드이고, Google AI Studio(Gemini) 키 없이 동작합니다.** AI 분석은 서버에 키를 넣었을 때만 화면에 나타나는 선택 기능입니다.
+
+| | 사전 모드 (기본, AI 없음) | AI 분석 (선택) |
 |---|---|---|
-| 단어 | ✅ 한국어 뜻 | ✅ 영어 뜻 |
-| 문법 | ✅ | ✅ 규칙 기반 (약 150개 패턴, 한국어 설명) |
-| 레벨 | AI 추정 | 단어 속 가장 어려운 한자의 레벨 (추정) |
-| 비용·제한 | Gemini 사용량 소모, IP 당 한 시간 20회 | 제한 없음 |
+| 단어 레벨 | JLPT 단어 목록(약 7,800개) 기준. 목록에 없으면 한자 레벨로 추정(「추정」 표시) | AI 추정 |
+| 단어 뜻 | 한국어 위키낱말사전 → 없으면 Chrome 내장 번역 → 그것도 안 되면 영어 | 한국어 |
+| 문법 | 규칙 기반 (약 150개 패턴, 한국어 설명) | AI 가 찾음 |
+| 비용·제한 | 무료, 제한 없음 | Gemini 사용량, IP 당 한 시간 20회 |
 
-- 사전 모드는 [AnchorI/jlpt-kanji-dictionary](https://github.com/AnchorI/jlpt-kanji-dictionary) (MIT) 데이터와 형태소 분석기 [kuromoji](https://github.com/takuyaa/kuromoji.js) 를 씁니다.
-  원본 단어 사전에는 JLPT 레벨이 없고 한자에만 레벨이 있어서, 단어 레벨은 한자 기준 추정치입니다.
-- 사전 모드의 문법은 `lib/grammarPatterns.js` 에 정리한 패턴(정규식·형태소 규칙)으로 찾습니다.
-  공개된 문법 데이터가 없어 직접 정리한 목록이고, 규칙에 없는 문법은 찾지 못하며 가끔 잘못 잡을 수 있습니다.
-  패턴은 목록에 한 줄씩 추가할 수 있습니다.
-- 2010년 이후 JLPT 공식 어휘 목록은 공개되지 않아, 어느 방식이든 레벨은 추정치입니다.
+- 형태소 분석은 [kuromoji](https://github.com/takuyaa/kuromoji.js) 를 서버에서 돌립니다.
+- 한국어 뜻이 없는 단어는 브라우저의 [Translator API](https://developer.chrome.com/docs/ai/translator-api)
+  (Chrome 138+ 데스크톱, 기기 안에서 번역)로 번역하고 「기계 번역」으로 표시합니다. 처음 한 번은 번역 모델을 내려받습니다.
+- 사전 모드의 문법은 `lib/grammarPatterns.js` 에 직접 정리한 패턴으로 찾습니다.
+  규칙에 없는 문법은 찾지 못하고 가끔 잘못 잡을 수 있습니다. 패턴은 목록에 한 줄씩 추가할 수 있습니다.
+- 데이터 출처와 라이선스는 `data/NOTICE.md` 를 보세요.
+- 2010년 이후 JLPT 공식 어휘 목록은 공개되지 않아, 어느 방식이든 레벨은 참고용입니다.
 
-## API 키 보호
+## API 키 보호 (AI 분석을 쓸 때만)
 
 Gemini 키는 **서버 환경변수(`GEMINI_API_KEY`)** 에만 있고 브라우저로 전달되지 않습니다.
 브라우저는 `/api/extract` 로 기사만 보내고, 서버(Next.js Route Handler)가 Gemini 를 호출합니다.
@@ -44,7 +47,8 @@ Gemini 키는 **서버 환경변수(`GEMINI_API_KEY`)** 에만 있고 브라우�
 ```
 app/
   layout.jsx              공통 레이아웃
-  page.jsx                화면 (분석 방식·레벨 선택, 결과 카드)
+  page.jsx                서버에 키가 있는지 확인해 화면에 전달
+  Extractor.jsx           화면 (뉴스, 분석 방식·레벨 선택, 결과 카드, Chrome 번역)
   globals.css
   api/extract/route.js    서버 API: 입력 검사, 호출 제한, 모드별 분석
   api/news/route.js       서버 API: NHK RSS 뉴스 목록
@@ -64,23 +68,25 @@ scripts/
 
 ```bash
 npm install
-cp .env.example .env.local   # 그리고 GEMINI_API_KEY= 뒤에 키 입력
 npm run dev
+# AI 분석도 쓰려면: cp .env.example .env.local 후 GEMINI_API_KEY= 뒤에 키 입력
 ```
 
-http://localhost:3000 에 접속하세요. 키 발급(무료): https://aistudio.google.com/apikey
+http://localhost:3000 에 접속하세요. 키 없이도 사전 모드로 바로 쓸 수 있습니다.
 
 ## 배포
 
 서버 코드(API)가 있어서 **GitHub Pages 로는 배포할 수 없습니다.** Vercel 을 추천합니다.
 
 1. https://vercel.com 에서 이 GitHub 저장소를 Import
-2. Settings → Environment Variables 에 `GEMINI_API_KEY` 추가
+2. (AI 분석을 쓸 때만) Settings → Environment Variables 에 `GEMINI_API_KEY` 추가 후 다시 배포
 3. 이후 `main` 에 push 하면 자동 배포
 
 ## 사전 데이터 다시 만들기
 
 ```bash
 git clone --depth 1 https://github.com/AnchorI/jlpt-kanji-dictionary.git ../jlpt-kanji-dictionary
-node scripts/build-dictionary.mjs ../jlpt-kanji-dictionary
+git clone --depth 1 https://github.com/elzup/jlpt-word-list.git ../jlpt-word-list
+curl -L -o ../ko-wiktionary-ja.jsonl "https://kaikki.org/kowiktionary/%EC%9D%BC%EB%B3%B8%EC%96%B4/kaikki.org-dictionary-%EC%9D%BC%EB%B3%B8%EC%96%B4.jsonl"
+node scripts/build-dictionary.mjs ../jlpt-kanji-dictionary ../jlpt-word-list ../ko-wiktionary-ja.jsonl
 ```

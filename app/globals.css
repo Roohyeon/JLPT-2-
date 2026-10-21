@@ -151,3 +151,5 @@ blockquote {
   color: #555;
   font-size: 14px;
 }
+
+.sub { font-size: 13px; font-weight: 400; color: #888; margin: 0 0 4px; }
