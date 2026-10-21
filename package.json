@@ -9,7 +9,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@google/genai": "^2.30.0",
     "kuromoji": "^0.1.2",
     "next": "^16.4.2",
     "react": "^19.3.1",
