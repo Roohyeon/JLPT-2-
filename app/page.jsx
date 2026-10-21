@@ -41,11 +41,6 @@ async function translateMissing(vocabulary, onTranslated) {
   }
 }
 
-// 쉬운 레벨(N5)이 먼저 오도록 정렬
-function byLevel(a, b) {
-  return LEVELS.indexOf(a.jlpt_level) - LEVELS.indexOf(b.jlpt_level);
-}
-
 async function requestExtract({ article, levels }) {
   let res;
   try {
@@ -152,9 +147,12 @@ export default function Page() {
 
       {result && (
         <>
+          <ArticleReader
+            paragraphs={result.paragraphs}
+            vocabulary={result.vocabulary}
+            grammar={result.grammar}
+          />
           <ArticleTranslation article={result.article} />
-          <VocabularyList items={[...result.vocabulary].sort(byLevel)} />
-          <GrammarList items={[...result.grammar].sort(byLevel)} />
         </>
       )}
     </main>
@@ -315,58 +313,86 @@ function LevelBadge({ level }) {
   return <span className={`badge badge-${level}`}>{level}</span>;
 }
 
-function VocabularyList({ items }) {
+// 기사 본문을 그대로 보여주고, 뽑은 단어·문법을 누르면 그 자리에서 뜻이 열린다. 다시 누르면 닫힌다.
+function ArticleReader({ paragraphs, vocabulary, grammar }) {
+  const [openKey, setOpenKey] = useState(null);
+  const byWord = new Map(vocabulary.map((v) => [v.word, v]));
+  const byPattern = new Map(grammar.map((g) => [g.pattern, g]));
+  const empty = vocabulary.length === 0 && grammar.length === 0;
+
   return (
-    <section>
-      <h2>단어 ({items.length})</h2>
-      {items.length === 0 && <p className="empty">선택한 레벨의 단어를 찾지 못했습니다.</p>}
-      <ul className="cards">
-        {items.map((v, i) => (
-          <li key={`${v.word}-${i}`} className="card">
-            <div className="card-head">
-              <ruby>
-                {v.word}
-                <rt>{v.reading}</rt>
-              </ruby>
-              <div className="tags">
-                <LevelBadge level={v.jlpt_level} />
-                {v.level_estimated && (
-                  <span className="tag" title="JLPT 단어 목록에 없어 한자 레벨로 추정했어요">추정</span>
-                )}
-                {v.part_of_speech && <span className="tag">{v.part_of_speech}</span>}
-              </div>
-            </div>
-            <p className="meaning">
-              {v.meaning_ko ?? v.meaning_en}
-              {v.machine_translated && <span className="sub"> (기계 번역)</span>}
-            </p>
-            {v.meaning_ko && v.meaning_en && <p className="sub">{v.meaning_en}</p>}
-            <blockquote>{v.sentence_from_article}</blockquote>
-          </li>
-        ))}
-      </ul>
+    <section className="news-box reader">
+      <h2>
+        단어 {vocabulary.length} · 문법 {grammar.length}
+      </h2>
+      {empty ? (
+        <p className="empty">선택한 레벨의 단어·문법을 찾지 못했습니다.</p>
+      ) : (
+        <p className="sub">밑줄 친 단어, 색칠한 문법을 누르면 뜻이 나와요.</p>
+      )}
+      {paragraphs.map((segments, p) => (
+        <p key={p} className="reader-text">
+          {segments.map((seg, i) => {
+            const v = seg.word && byWord.get(seg.word);
+            const g = seg.grammar && byPattern.get(seg.grammar);
+            const item = v ?? g;
+            if (!item) return seg.text;
+            const key = `${p}-${i}`;
+            const open = openKey === key;
+            return (
+              <span key={key} className="word-wrap">
+                <button
+                  type="button"
+                  className={`${g ? "grammar" : "word"} word-${item.jlpt_level} ${open ? "on" : ""}`}
+                  onClick={() => setOpenKey(open ? null : key)}
+                  aria-expanded={open}
+                >
+                  {seg.text}
+                </button>
+                {open && (g ? <GrammarPopover g={g} /> : <WordPopover v={v} />)}
+              </span>
+            );
+          })}
+        </p>
+      ))}
     </section>
   );
 }
 
-function GrammarList({ items }) {
+function GrammarPopover({ g }) {
   return (
-    <section>
-      <h2>문법 ({items.length})</h2>
-      {items.length === 0 && <p className="empty">선택한 레벨의 문법을 찾지 못했습니다.</p>}
-      <ul className="cards">
-        {items.map((g, i) => (
-          <li key={`${g.pattern}-${i}`} className="card">
-            <div className="card-head">
-              <strong className="pattern">{g.pattern}</strong>
-              <LevelBadge level={g.jlpt_level} />
-            </div>
-            <p className="meaning">{g.meaning_ko}</p>
-            {g.explanation && <p className="explanation">{g.explanation}</p>}
-            <blockquote>{g.sentence_from_article}</blockquote>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <span className="popover" role="tooltip">
+      <span className="card-head">
+        <strong className="pattern">{g.pattern}</strong>
+        <LevelBadge level={g.jlpt_level} />
+      </span>
+      <span className="meaning">{g.meaning_ko}</span>
+      {g.explanation && <span className="explanation">{g.explanation}</span>}
+    </span>
+  );
+}
+
+function WordPopover({ v }) {
+  return (
+    <span className="popover" role="tooltip">
+      <span className="card-head">
+        <ruby>
+          {v.word}
+          <rt>{v.reading}</rt>
+        </ruby>
+        <span className="tags">
+          <LevelBadge level={v.jlpt_level} />
+          {v.level_estimated && (
+            <span className="tag" title="JLPT 단어 목록에 없어 한자 레벨로 추정했어요">추정</span>
+          )}
+          {v.part_of_speech && <span className="tag">{v.part_of_speech}</span>}
+        </span>
+      </span>
+      <span className="meaning">
+        {v.meaning_ko ?? v.meaning_en}
+        {v.machine_translated && <span className="sub"> (기계 번역)</span>}
+      </span>
+      {v.meaning_ko && v.meaning_en && <span className="sub">{v.meaning_en}</span>}
+    </span>
   );
 }

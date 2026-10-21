@@ -160,3 +160,47 @@ blockquote {
 .translation-head h2 { margin: 0; }
 .translation p { line-height: 1.7; }
 button.toggle { margin: 0; padding: 4px 12px; font-size: 14px; }
+
+/* 기사 속 단어: 누르면 뜻이 열린다 */
+.reader-text { font-size: 18px; line-height: 2.2; }
+.word-wrap { position: relative; }
+button.word, button.grammar {
+  margin: 0;
+  padding: 0 1px;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border-radius: 3px;
+  border-bottom: 2px solid currentColor;
+}
+/* 문법은 밑줄 대신 연한 배경으로 단어와 구분한다 */
+button.grammar { border-bottom-style: dashed; background: #fff4e6; }
+button.word-N5 { border-bottom-color: #2f9e44; }
+button.word-N4 { border-bottom-color: #66a80f; }
+button.word-N3 { border-bottom-color: #f08c00; }
+button.word-N2 { border-bottom-color: #e8590c; }
+button.word-N1 { border-bottom-color: #c92a2a; }
+button.word:hover, button.word.on, button.grammar:hover, button.grammar.on { background: #edf2ff; }
+.popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: min(280px, 80vw);
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  line-height: 1.5;
+  font-size: 15px;
+}
+.popover .card-head { gap: 12px; }
+.popover .meaning { margin: 4px 0 0; }
+.popover .explanation { font-size: 13px; }
+.popover .pattern { font-size: 17px; }
