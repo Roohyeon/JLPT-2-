@@ -22,6 +22,8 @@
 3. **「단어·문법 추출」** 을 누르면 결과가 쉬운 레벨부터 카드로 나옵니다.
    - 「추정」: JLPT 단어 목록에 없어서 한자 레벨로 추정한 단어
    - 「기계 번역」: 사전에 한국어 뜻이 없어 Chrome 내장 번역으로 채운 뜻 (영어 뜻은 아래에 함께 표시)
+4. **기사 번역 (선택)**: 결과 위의 「기사 번역 (한국어)」에서 「보기」를 누르면 기사 전체를 한국어로 번역해 보여 줍니다.
+   「숨기기」로 접을 수 있고, 펼친 상태는 다음 방문 때도 기억합니다. (Chrome 138+ 데스크톱)
 
 ### 어떻게 찾나요
 
@@ -45,7 +47,7 @@
 | `/api/extract` | 이 앱 안의 서버 코드 (Next.js Route Handler). 입력 검사 후 사전 데이터로 분석 | 없음 | 「단어·문법 추출」을 누를 때 |
 | `/api/news` | 이 앱 안의 서버 코드. NHK RSS 를 대신 가져와 목록으로 돌려줌 | 없음 | 「오늘의 NHK 뉴스」를 열 때 |
 | NHK 공식 RSS (`news.web.nhk/n-data/conf/na/rss/cat0~7.xml`) | NHK 가 공개한 뉴스 피드. 제목·요약·링크만 제공 | 없음 | `/api/news` 가 호출 (10분 캐시) |
-| [Chrome Translator API](https://developer.chrome.com/docs/ai/translator-api) | Chrome 에 내장된 기기 안 번역 기능 (Chrome 138+ 데스크톱) | 없음 | 한국어 뜻이 없는 단어가 있을 때 브라우저에서 호출 |
+| [Chrome Translator API](https://developer.chrome.com/docs/ai/translator-api) | Chrome 에 내장된 기기 안 번역 기능 (Chrome 138+ 데스크톱) | 없음 | 한국어 뜻이 없는 단어가 있을 때, 「기사 번역」을 펼쳤을 때 브라우저에서 호출 |
 
 ### API 를 이렇게 썼습니다
 
@@ -56,7 +58,8 @@
 - **단어·문법 분석은 API 호출 없이 서버 안에서 끝납니다.** 형태소 분석기 [kuromoji](https://github.com/takuyaa/kuromoji.js),
   사전 데이터 파일(`data/jlpt-dictionary.json`), 문법 규칙(`lib/grammarPatterns.js`)이 모두 서버에 들어 있습니다.
   사전 데이터는 개발할 때 한 번 내려받아 만든 것이고, 서비스 중에는 외부에서 다시 받지 않습니다.
-- **Chrome 번역은 사용자 브라우저 안에서 돌아갑니다.** 서버나 외부로 단어를 보내지 않습니다. 처음 한 번은 Chrome 이 번역 모델을 내려받고,
+- **Chrome 번역은 사용자 브라우저 안에서 돌아갑니다.** 서버나 외부로 단어·기사를 보내지 않습니다.
+  단어 번역과 기사 번역은 번역기 하나를 같이 씁니다. 처음 한 번은 Chrome 이 번역 모델을 내려받고,
   지원하지 않는 브라우저(Firefox, Safari, 모바일)에서는 영어 뜻을 그대로 보여 줍니다.
 
 ### 사용한 공개 데이터
@@ -79,7 +82,7 @@
 ```
 app/
   layout.jsx              공통 레이아웃
-  page.jsx                화면 (뉴스, 레벨 선택, 결과 카드, Chrome 번역)
+  page.jsx                화면 (뉴스, 레벨 선택, 기사 번역, 결과 카드)
   globals.css
   api/extract/route.js    서버 API: 입력 검사, 단어·문법 분석
   api/news/route.js       서버 API: NHK RSS 뉴스 목록

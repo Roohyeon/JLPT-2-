@@ -4,16 +4,34 @@ import { useEffect, useState } from "react";
 import { JLPT_LEVELS as LEVELS } from "../lib/levels.js";
 import { NEWS_CATEGORIES } from "../lib/news.js";
 
-// 한국어 뜻이 없는 단어를 Chrome 내장 번역(Translator API)으로 번역한다.
-// 내 컴퓨터 안에서 돌아가서 키도 비용도 없다. 지원하지 않는 브라우저면 영어 뜻을 그대로 둔다.
+// Chrome 내장 번역(Translator API, 일본어 → 한국어). 내 컴퓨터 안에서 돌아가서 키도 비용도 없다.
+// 번역기는 한 번 만들어 단어 번역과 기사 번역이 같이 쓴다. 지원하지 않는 브라우저면 null.
+const TRANSLATE_OPTIONS = { sourceLanguage: "ja", targetLanguage: "ko" };
+let translatorPromise;
+
+function getTranslator(onProgress) {
+  if (typeof self === "undefined" || !("Translator" in self)) return Promise.resolve(null);
+  translatorPromise ??= (async () => {
+    if ((await Translator.availability(TRANSLATE_OPTIONS)) === "unavailable") return null;
+    return Translator.create({
+      ...TRANSLATE_OPTIONS,
+      // 처음 한 번은 번역 모델을 내려받는다.
+      monitor: (m) => m.addEventListener("downloadprogress", (e) => onProgress?.(e.loaded)),
+    });
+  })().catch((err) => {
+    translatorPromise = undefined; // 실패하면 다음에 다시 시도할 수 있게
+    throw err;
+  });
+  return translatorPromise;
+}
+
+// 한국어 뜻이 없는 단어를 번역한다. 번역할 수 없으면 영어 뜻을 그대로 둔다.
 async function translateMissing(vocabulary, onTranslated) {
-  if (!("Translator" in self)) return;
   const missing = vocabulary.filter((v) => !v.meaning_ko);
   if (missing.length === 0) return;
   try {
-    const options = { sourceLanguage: "ja", targetLanguage: "ko" };
-    if ((await Translator.availability(options)) === "unavailable") return;
-    const translator = await Translator.create(options);
+    const translator = await getTranslator();
+    if (!translator) return;
     for (const v of missing) {
       const ko = (await translator.translate(v.word)).trim();
       if (ko && ko !== v.word) onTranslated(v.word, ko);
@@ -60,8 +78,7 @@ export default function Page() {
 
   // RSS 에는 요약만 있어서 제목 + 요약을 넣고, 전문은 원문에서 붙여넣도록 안내한다.
   function pickNews(item) {
-    setArticle(`${item.title}
-${item.summary.replace(/…$/, "")}`);
+    setArticle(`${item.title}\n${item.summary.replace(/…$/, "")}`);
     setPicked(item);
     setResult(null);
   }
@@ -73,8 +90,9 @@ ${item.summary.replace(/…$/, "")}`);
     setResult(null);
 
     try {
-      const data = await requestExtract({ article: article.trim(), levels });
-      setResult(data);
+      const text = article.trim();
+      const data = await requestExtract({ article: text, levels });
+      setResult({ ...data, article: text });
       translateMissing(data.vocabulary, (word, ko) =>
         setResult((prev) => ({
           ...prev,
@@ -134,11 +152,106 @@ ${item.summary.replace(/…$/, "")}`);
 
       {result && (
         <>
+          <ArticleTranslation article={result.article} />
           <VocabularyList items={[...result.vocabulary].sort(byLevel)} />
           <GrammarList items={[...result.grammar].sort(byLevel)} />
         </>
       )}
     </main>
+  );
+}
+
+const SHOW_TRANSLATION_KEY = "show-article-translation";
+
+function loadShowTranslation() {
+  try {
+    return localStorage.getItem(SHOW_TRANSLATION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+// 분석한 기사 전체를 한국어로 번역해 보여준다. 토글로 접고 펼 수 있다.
+// 번역은 펼쳤을 때만 하고(모델 다운로드에 사용자 클릭이 필요), 펼친 상태는 다음 방문에도 기억한다.
+function ArticleTranslation({ article }) {
+  const [open, setOpen] = useState(false);
+  const [paragraphs, setParagraphs] = useState([]);
+  const [status, setStatus] = useState("idle"); // idle | loading | done | unsupported | error
+  const [progress, setProgress] = useState(null);
+
+  useEffect(() => setOpen(loadShowTranslation()), []);
+
+  function toggle() {
+    const next = !open;
+    setOpen(next);
+    try {
+      localStorage.setItem(SHOW_TRANSLATION_KEY, next ? "1" : "0");
+    } catch {
+      // 기억하지 못해도 이번에는 동작한다.
+    }
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setParagraphs([]);
+    setStatus("loading");
+    setProgress(null);
+
+    (async () => {
+      try {
+        const translator = await getTranslator((loaded) => !cancelled && setProgress(loaded));
+        if (cancelled) return;
+        if (!translator) return setStatus("unsupported");
+        // 문단마다 번역해서 끝나는 대로 바로 보여준다.
+        for (const line of article.split(/\n/).map((l) => l.trim()).filter(Boolean)) {
+          const ko = await translator.translate(line);
+          if (cancelled) return;
+          setParagraphs((prev) => [...prev, ko]);
+        }
+        setStatus("done");
+      } catch {
+        if (!cancelled) setStatus("error");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, article]);
+
+  return (
+    <section className="news-box translation">
+      <div className="translation-head">
+        <h2>기사 번역 (한국어)</h2>
+        <button type="button" className="toggle" onClick={toggle} aria-expanded={open}>
+          {open ? "숨기기" : "보기"}
+        </button>
+      </div>
+      {open && (
+        <>
+          {paragraphs.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+          {status === "loading" && (
+            <p className="empty">
+              {progress !== null && progress < 1
+                ? `번역 모델 내려받는 중… ${Math.round(progress * 100)}%`
+                : "번역 중…"}
+            </p>
+          )}
+          {status === "unsupported" && (
+            <p className="empty">
+              이 브라우저는 내장 번역을 지원하지 않아요. Chrome 138 이상(데스크톱)에서 볼 수 있어요.
+            </p>
+          )}
+          {status === "error" && (
+            <p className="error">번역하지 못했어요. 「숨기기」 후 다시 「보기」를 눌러 주세요.</p>
+          )}
+          {status === "done" && <p className="sub">Chrome 내장 번역으로 기계 번역한 내용이에요.</p>}
+        </>
+      )}
+    </section>
   );
 }
 

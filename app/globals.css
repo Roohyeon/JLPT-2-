@@ -153,3 +153,10 @@ blockquote {
 }
 
 .sub { font-size: 13px; font-weight: 400; color: #888; margin: 0 0 4px; }
+
+/* 기사 번역 */
+.translation { margin-top: 20px; }
+.translation-head { display: flex; justify-content: space-between; align-items: center; }
+.translation-head h2 { margin: 0; }
+.translation p { line-height: 1.7; }
+button.toggle { margin: 0; padding: 4px 12px; font-size: 14px; }
